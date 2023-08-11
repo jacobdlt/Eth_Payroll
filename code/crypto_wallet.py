@@ -8,7 +8,7 @@
 import os
 import requests
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv('SAMPLE.env')
 from bip44 import Wallet
 from web3 import Account
 from web3 import middleware
@@ -29,7 +29,7 @@ def generate_account():
     private, public = wallet.derive_account("eth")
 
     # Convert private key into an Ethereum account
-    account = Account.privateKeyToAccount(private)
+    account = Account.from_key(private)
 
     return account
 
@@ -40,13 +40,15 @@ def get_balance(w3, address):
 
     # Convert Wei value to ether
     ether = w3.fromWei(wei_balance, "ether")
-
     # Return the value in ether
     return ether
 
 
 def send_transaction(w3, account, to, wage):
     """Send an authorized transaction to the Ganache blockchain."""
+
+    account_address = account.address
+
     # Set gas price strategy
     w3.eth.setGasPriceStrategy(medium_gas_price_strategy)
 
@@ -54,16 +56,16 @@ def send_transaction(w3, account, to, wage):
     value = w3.toWei(wage, "ether")
 
     # Calculate gas estimate
-    gasEstimate = w3.eth.estimateGas({"to": to, "from": account.address, "value": value})
+    gasEstimate = w3.eth.estimateGas({"to": to, "from": account_address, "value": value})
 
     # Construct a raw transaction
     raw_tx = {
         "to": to,
-        "from": account.address,
+        "from": account_address,
         "value": value,
         "gas": gasEstimate,
-        "gasPrice": 0,
-        "nonce": w3.eth.getTransactionCount(account.address)
+        "gasPrice": w3.toWei(.001, 'ether'),
+        "nonce": w3.eth.getTransactionCount(account_address)
     }
 
     # Sign the raw transaction with ethereum account
